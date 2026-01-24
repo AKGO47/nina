@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="External\x64\Cfitsio\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\NINA\External\x64\Cfitsio\cfitsionative.dll" Link="External\x64\Cfitsio\cfitsionative.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\NINA\External\x64\Cfitsio\pthreadVC2.dll" Link="External\x64\Cfitsio\pthreadVC2.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\NINA\External\x64\Cfitsio\zlib.dll" Link="External\x64\Cfitsio\zlib.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NINA.Image\NINA.Image.csproj" />
+  </ItemGroup>
+
+</Project>
