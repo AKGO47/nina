@@ -14,7 +14,6 @@ namespace NINA.Benchmarks {
             // initialize format translation dictionary
             FormatTranslations[System.Drawing.Imaging.PixelFormat.Format16bppGrayScale] = System.Drawing.Imaging.PixelFormat.Format48bppRgb;
         }
-
         public bool SaveColorChannels { get; set; }
 
         public bool SaveLumChannel { get; set; }
@@ -115,7 +114,8 @@ namespace NINA.Benchmarks {
 
             // Process the interior rows in parallel; the hot path assumes valid neighbors
             // so we peel borders out to a separate pass to avoid per-pixel edge checks.
-            Parallel.For(innerStartY, innerEndY, y => ProcessInnerRow(y, width, srcPtr, dstPtr, srcStride, dstStride, flatPattern));
+            var po = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 1) };
+            Parallel.For(innerStartY, innerEndY, po, y => ProcessInnerRow(y, width, srcPtr, dstPtr, srcStride, dstStride, flatPattern));
 
             ProcessBorders(width, height, srcPtr, dstPtr, srcStride, dstStride);
         }
@@ -381,7 +381,7 @@ namespace NINA.Benchmarks {
                             ushort r = src[RGB.R];
                             src += 3;
 
-                            lumRow[x] = (ushort)((r + g + b) / 3.0);
+                            lumRow[x] = (ushort)((r + g + b) / 3);
                         }
                     }
                 });
