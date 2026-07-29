@@ -1302,6 +1302,13 @@ namespace QHYCCD {
             public double CurGain;
 
             /// <summary>
+            /// Internally-stored offset setting. Updated on every successful offset command so it can be
+            /// re-applied after a read mode change, which reinitializes the camera and resets its control
+            /// values to the new mode's power-on defaults.
+            /// </summary>
+            public int CurOffset;
+
+            /// <summary>
             /// Camera has temperature sensor?
             /// </summary>
             public bool HasChipTemp;

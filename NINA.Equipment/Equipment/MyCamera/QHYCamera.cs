@@ -380,6 +380,7 @@ namespace NINA.Equipment.Equipment.MyCamera {
             set {
                 if (Connected && CanSetOffset) {
                     if (Sdk.SetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET, value)) {
+                        Info.CurOffset = value;
                         RaisePropertyChanged();
                     }
                 }
@@ -477,6 +478,20 @@ namespace NINA.Equipment.Equipment.MyCamera {
 
                                 Logger.Debug($"QHYCCD: ReadoutMode: Setting readout mode to {mode} ({modeName})");
 
+                                /*
+                                 * SetQHYCCDReadMode() followed by InitQHYCCD() reinitializes the camera and resets
+                                 * CONTROL_GAIN and CONTROL_OFFSET to the new read mode's power-on defaults.
+                                 * StartExposure() applies gain and offset *before* it gets here, so without
+                                 * re-applying them the exposure is digitized with the reset defaults while the
+                                 * image metadata still records the requested values.
+                                 *
+                                 * The values are taken from our own cache rather than from the hardware: by the
+                                 * time a failed restore is retried the hardware already holds the reset value,
+                                 * so a hardware read would perpetuate the wrong number.
+                                 */
+                                double requestedGain = Info.CurGain;
+                                int requestedOffset = Info.CurOffset;
+
                                 if ((rv = Sdk.SetReadMode(mode)) != QhySdk.QHYCCD_SUCCESS) {
                                     Logger.Error($"QHYCCD: SetQHYCCDReadMode() failed. Returned {rv}");
                                     return;
@@ -488,6 +503,25 @@ namespace NINA.Equipment.Equipment.MyCamera {
 
                                 Sdk.InitCamera();
                                 SetImageResolution();
+
+                                /*
+                                 * A failed restore leaves the sensor at the wrong operating point, so it must
+                                 * abort the exposure rather than silently produce a miscalibrated frame.
+                                 * The error is also logged because PersistSettingsCameraDecorator swallows
+                                 * exceptions from this setter when it restores the read mode on connect.
+                                 */
+                                if (CanSetGain && !Sdk.SetControlValue(QhySdk.CONTROL_ID.CONTROL_GAIN, requestedGain)) {
+                                    var message = $"QHYCCD: Failed to restore gain {requestedGain} after switching to readout mode {mode} ({modeName})";
+                                    Logger.Error(message);
+                                    throw new Exception(message);
+                                }
+                                if (CanSetOffset && !Sdk.SetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET, requestedOffset)) {
+                                    var message = $"QHYCCD: Failed to restore offset {requestedOffset} after switching to readout mode {mode} ({modeName})";
+                                    Logger.Error(message);
+                                    throw new Exception(message);
+                                }
+
+                                Logger.Debug($"QHYCCD: ReadoutMode: Re-applied gain {requestedGain} and offset {requestedOffset} after read mode change");
                             }
                         }
                     }
@@ -895,10 +929,26 @@ namespace NINA.Equipment.Equipment.MyCamera {
                 Info.HasUnreliableGain = QuirkUnreliableGain();
 
                 /*
-                 * If we have to keep track of gain ourselves, initialize the gain to Info.GainMin
+                 * Seed the cached gain that the ReadoutMode setter re-applies after a read mode change.
+                 * This must not go through the Gain property: Connected is only set at the very end of
+                 * Connect(), so the setter's guard makes it a no-op here.
+                 * Cameras that report false gain values keep tracking gain themselves starting at
+                 * Info.GainMin; all others adopt whatever the hardware currently holds.
+                 * Skipped on an internal reconnect (live view mode switch), which reopens the camera at
+                 * its power-on defaults - the cache still holds the values the user asked for.
                  */
-                if (Info.HasUnreliableGain == true) {
-                    Gain = Info.GainMin;
+                if (!internalReconnect && Sdk.IsControl(QhySdk.CONTROL_ID.CONTROL_GAIN)) {
+                    if (Info.HasUnreliableGain == true) {
+                        Info.CurGain = Info.GainMin;
+                    } else {
+                        double seedGain = Sdk.GetControlValue(QhySdk.CONTROL_ID.CONTROL_GAIN);
+                        if (seedGain == QhySdk.QHYCCD_ERROR) {
+                            throw new Exception("QHYCCD: GetQHYCCDParam(CONTROL_GAIN) failed while seeding the gain cache");
+                        }
+                        Info.CurGain = seedGain;
+                    }
+
+                    Logger.Debug($"QHYCCD: Seeded gain cache with {Info.CurGain}");
                 }
 
                 /*
@@ -912,6 +962,23 @@ namespace NINA.Equipment.Equipment.MyCamera {
                 Logger.Debug($"QHYCCD: OffMin={Info.OffMin}, OffMax={Info.OffMax}, OffStep={Info.OffStep}");
 
                 QuirkInflatedOffset();
+
+                /*
+                 * Seed the cached offset the same way, so a read mode change that happens before the first
+                 * explicit offset command of the session still restores the right value.
+                 * QuirkInflatedOffset() must run first: the Offset getter reports the hardware value minus
+                 * Info.InflatedOff while the setter sends the number as-is, so the cache has to hold the
+                 * user-facing value for the restore to send what the setter would have sent.
+                 */
+                if (!internalReconnect && Sdk.IsControl(QhySdk.CONTROL_ID.CONTROL_OFFSET)) {
+                    double seedOffset = Sdk.GetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET);
+                    if (seedOffset == QhySdk.QHYCCD_ERROR) {
+                        throw new Exception("QHYCCD: GetQHYCCDParam(CONTROL_OFFSET) failed while seeding the offset cache");
+                    }
+                    Info.CurOffset = unchecked((int)(seedOffset - Info.InflatedOff));
+
+                    Logger.Debug($"QHYCCD: Seeded offset cache with {Info.CurOffset}");
+                }
 
                 /*
                  * Fetch our min and max PWM settings for
