@@ -1,7 +1,7 @@
 #region "copyright"
 
 /*
-    Copyright © 2016 - 2024 Stefan Berg <isbeorn86+NINA@googlemail.com> and the N.I.N.A. contributors
+    Copyright Â© 2016 - 2024 Stefan Berg <isbeorn86+NINA@googlemail.com> and the N.I.N.A. contributors
 
     This file is part of N.I.N.A. - Nighttime Imaging 'N' Astronomy.
 
@@ -111,7 +111,7 @@ namespace NINA.WPF.Base.ViewModel.Equipment.Rotator {
         public void Sync(float skyAngle) {
             try {
                 if (RotatorInfo.Connected) {
-                    Logger.Info($"Syncing Rotator to Sky Angle {skyAngle}°");
+                    Logger.Info($"Syncing Rotator to Sky Angle {skyAngle}Â°");
                     var from = Rotator.Position;
                     Rotator.Sync(skyAngle);
                     RotatorInfo.Position = Rotator.Position;
@@ -147,7 +147,7 @@ namespace NINA.WPF.Base.ViewModel.Equipment.Rotator {
                         }
                     );
 
-                    Logger.Debug($"Move rotator to {adjustedTargetPosition}°");
+                    Logger.Debug($"Move rotator to {adjustedTargetPosition}Â°");
                     var anyCTS = CancellationTokenSource.CreateLinkedTokenSource(_moveCts.Token, ct);
                     using (anyCTS.Token.Register(() => Rotator?.Halt())) {
                         await Rotator.MoveAbsolute(adjustedTargetPosition, anyCTS.Token);
@@ -201,7 +201,7 @@ namespace NINA.WPF.Base.ViewModel.Equipment.Rotator {
                         }
                     );
 
-                    Logger.Debug($"Move rotator mechanical to {adjustedTargetPosition}°");
+                    Logger.Debug($"Move rotator mechanical to {adjustedTargetPosition}Â°");
                     var anyCTS = CancellationTokenSource.CreateLinkedTokenSource(_moveCts.Token, ct);
                     using (anyCTS.Token.Register(() => Rotator?.Halt())) {
                         await Rotator.MoveAbsoluteMechanical(adjustedTargetPosition, anyCTS.Token);
