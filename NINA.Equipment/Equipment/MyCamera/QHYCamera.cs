@@ -1985,20 +1985,43 @@ namespace NINA.Equipment.Equipment.MyCamera {
         private void QuirkInflatedOffset() {
             double saveOffset = Sdk.GetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET);
 
-            double wantOffset = 1;
-            double gotOffset;
+            /*
+             * Probe with two offsets rather than one. An inflating camera adds a constant, so its
+             * readbacks stay exactly as far apart as the values we sent. A camera whose current read
+             * mode fixes the offset in hardware - QHY's Linearity HDR mode is documented to do that -
+             * ignores both writes and reports the same number twice.
+             *
+             * A single probe cannot tell those apart and reads the ignored write as an inflation of
+             * saveOffset - probe. Since InflatedOff is subtracted from every offset reported from then
+             * on, one connect in such a read mode makes the driver misreport the offset for the rest
+             * of the session, in every read mode, by that amount - far enough to go negative.
+             */
+            if (Info.OffStep <= 0 || Info.OffMin + Info.OffStep > Info.OffMax) {
+                throw new Exception($"QHYCCD: Offset range {Info.OffMin}..{Info.OffMax} step {Info.OffStep} does not admit two distinct probes, cannot determine whether this camera inflates its Offset");
+            }
 
-            _ = Sdk.SetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET, wantOffset);
-            gotOffset = Sdk.GetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET) - wantOffset;
+            double firstProbe = Info.OffMin;
+            double secondProbe = Info.OffMin + Info.OffStep;
 
-            if (gotOffset != 0) {
-                Logger.Debug($"QHYCCD_QUIRK: This camera inflates its Offset by {gotOffset}");
-                Info.InflatedOff = (int)gotOffset;
+            _ = Sdk.SetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET, firstProbe);
+            double firstGot = Sdk.GetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET);
+
+            _ = Sdk.SetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET, secondProbe);
+            double secondGot = Sdk.GetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET);
+
+            double inflation = firstGot - firstProbe;
+
+            if (secondGot - firstGot != secondProbe - firstProbe) {
+                Logger.Debug($"QHYCCD_QUIRK: This camera does not apply Offset settings in its current read mode (probes {firstProbe} and {secondProbe} read back as {firstGot} and {secondGot}); not compensating for Offset inflation");
+                Info.InflatedOff = 0;
+            } else if (inflation != 0) {
+                Logger.Debug($"QHYCCD_QUIRK: This camera inflates its Offset by {inflation}");
+                Info.InflatedOff = (int)inflation;
             } else {
                 Info.InflatedOff = 0;
             }
 
-            /* Restore our original gain setting */
+            /* Restore our original offset setting */
             _ = Sdk.SetControlValue(QhySdk.CONTROL_ID.CONTROL_OFFSET, saveOffset);
         }
 
