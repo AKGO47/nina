@@ -4149,6 +4149,12 @@
   <data name="LblRotatorNotConnected" xml:space="preserve">
     <value>旋转器未连接</value>
   </data>
+  <data name="LblRotatorNotSynced" xml:space="preserve">
+    <value>旋转器尚未与天空同步。请先运行居中并旋转或解析并旋转。</value>
+  </data>
+  <data name="LblSkyPositionAngle" xml:space="preserve">
+    <value>天空位置角</value>
+  </data>
   <data name="LblScript" xml:space="preserve">
     <value>脚本</value>
   </data>
@@ -5368,6 +5374,12 @@
   </data>
   <data name="Lbl_SequenceCategory_Rotator" xml:space="preserve">
     <value>旋转器</value>
+  </data>
+  <data name="Lbl_SequenceItem_Rotator_MoveRotator_Description" xml:space="preserve">
+    <value>把旋转器转到指定的天球位置角。需要此前已经解析同步过。</value>
+  </data>
+  <data name="Lbl_SequenceItem_Rotator_MoveRotator_Name" xml:space="preserve">
+    <value>转到天空位置角</value>
   </data>
   <data name="Lbl_SequenceItem_Rotator_MoveRotatorMechanical_Description" xml:space="preserve">
     <value>将旋转器转到指定的机械角度</value>
