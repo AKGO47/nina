@@ -4156,12 +4156,6 @@ In case a longer duration is needed, a duration can be specified and the applica
   <data name="LblRotatorNotConnected" xml:space="preserve">
     <value>Rotator not connected</value>
   </data>
-  <data name="LblRotatorNotSynced" xml:space="preserve">
-    <value>Rotator is not synced to the sky. Run Center and Rotate or Solve and Rotate first.</value>
-  </data>
-  <data name="LblSkyPositionAngle" xml:space="preserve">
-    <value>Sky PA</value>
-  </data>
   <data name="LblScript" xml:space="preserve">
     <value>Script</value>
   </data>
@@ -5381,12 +5375,6 @@ For quickly changing conditions a smaller sample size will help to respond more 
   </data>
   <data name="Lbl_SequenceCategory_Rotator" xml:space="preserve">
     <value>Rotator</value>
-  </data>
-  <data name="Lbl_SequenceItem_Rotator_MoveRotator_Description" xml:space="preserve">
-    <value>Moves the rotator to the specified sky position angle. Requires a prior plate-solve sync.</value>
-  </data>
-  <data name="Lbl_SequenceItem_Rotator_MoveRotator_Name" xml:space="preserve">
-    <value>Rotate to sky angle</value>
   </data>
   <data name="Lbl_SequenceItem_Rotator_MoveRotatorMechanical_Description" xml:space="preserve">
     <value>Moves the rotator to the specified mechanical angle</value>
